@@ -45,12 +45,23 @@ namespace ChatServer
                     {
                         case 5:
                             var msg = _packetReader.ReadMessage();
-                            Console.WriteLine($"[{DateTime.Now}]: Сообщение: {msg}");
-                            Program.BroadcastMessage($"[{DateTime.Now}]: [{Username}]: {msg}");
+                            Console.WriteLine($"[{DateTime.Now}]: Сообщение от {Username}: {msg}");
+                            Program.BroadcastMessage($"[{DateTime.Now}]: {msg}", Username);
                             break;
                         case 15:
                             var img = _packetReader.ReadImage();
-                            Program.BroadcastImage(img);
+                            Console.WriteLine($"[{DateTime.Now}] {Username} Прикрепил изображение");
+                            Program.BroadcastImage(img, Username);
+                            break;
+                        case 25:
+                            var uName = _packetReader.ReadMessage();
+                            var uPassword = _packetReader.ReadMessage();
+                            Program.BroadcastDBresult(uName, uPassword, ClientSocket);
+                            break;
+                        case 30:
+                            var regUName = _packetReader.ReadMessage();
+                            var regUPassword = _packetReader.ReadMessage();
+                            Program.BroadcastDBregistration(regUName,regUPassword, ClientSocket);
                             break;
                         default:
                             break;

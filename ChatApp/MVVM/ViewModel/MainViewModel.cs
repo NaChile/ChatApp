@@ -2,18 +2,14 @@
 using ChatClient.MVVM.Core;
 using ChatClient.MVVM.Model;
 using ChatClient.Net;
-using ChatClient.Net.IO;
-using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using ChatClient.MVVM.View;
 
 namespace ChatClient.MVVM.ViewModel
 {
@@ -22,36 +18,104 @@ namespace ChatClient.MVVM.ViewModel
         public ObservableCollection<UserModel> Users { get; set; }
         public ObservableCollection<string> Messages { get; set; }
         public ObservableCollection<BitmapImage> Images { get; set; }
-
+        public ObservableCollection<MessageAndImageModel> MessagesAndImages { get; set; }
         public RelayCommand ConnectToServerCommand { get; set; }
         public RelayCommand SendMessageCommand { get; set; }
         public RelayCommand SendImageCommand { get; set; }
-
+        public RelayCommand LoginCommand { get; set; }
+        public RelayCommand RegistrationCommand { get; set; }
+        
 
         public string Username{ get; set; }
+        public string Password{ get; set; }
+        public string PasswordCheck{ get; set; }
         public string Message { get; set; }
-        public string Image { get; set; }
-        public BitmapImage SelectedImage { get; private set; }
+
+        
         private Server _server;
+        
         public MainViewModel()
         {
             Users = new ObservableCollection<UserModel>();
+            MessagesAndImages = new ObservableCollection<MessageAndImageModel>();
             Messages = new ObservableCollection<string>();
             Images = new ObservableCollection<BitmapImage>();
             _server = new Server();
             _server.connectedEvent += UserConnected;
-            _server.msgRecievedEvent += MessageRecieved;
-            _server.imgRecievedEvent += ImageRecieved;
+            _server.msgReceivedEvent += MessageReceived;
+            _server.imgReceivedEvent += ImageReceived;
             _server.userDisconnectEvent += RemoveUser;
+            _server.DbReceivedEvent += DbReceived;
+            _server.DbRegEvent += DbReg;
             ConnectToServerCommand = new RelayCommand(o => _server.ConnectToServer(Username), o => !string.IsNullOrEmpty(Username));
 
             SendImageCommand = new RelayCommand(o => _server.SendImageToServer());
 
             SendMessageCommand = new RelayCommand(o => _server.SendMessageToServer(Message), o => !string.IsNullOrEmpty(Message));
+            LoginCommand = new RelayCommand(o =>
+            {
+                _server.ConnectToServer(Username);
+                _server.CheckCredentials(Username, Password);
+                
+            });
+            RegistrationCommand = new RelayCommand(o =>
+            {
+                if (Password == PasswordCheck)
+                {
+                    _server.ConnectToServer(Username);
+                    _server.RegisterCredentials(Username, Password);
+                    
+                }
+                else
+                    MessageBox.Show("Пароли отличаются");
+            });
         }
-        
 
+        private void DbReg()
+        {
+            var dbResult = _server.PacketReader.ReadMessage();
+            if (dbResult == "Success")
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show("Успешная регистрация");
+                    var autorizeWindow = new AutorizeWindow();
+                    autorizeWindow.Show();
+                });
+                
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show("Пользователь с таким именем уже зарегистрирован");
+                });
+            }
+            
+        }
 
+        private void DbReceived()
+        {
+            var dbResult = _server.PacketReader.ReadMessage();
+            if (dbResult == "Success")
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show("Успешный вход");
+                    var mainWindow = new MainWindow();
+                    mainWindow.Show();
+                    
+                });
+                
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show("Ошибка входа");
+                });
+            }
+        }
 
         private void RemoveUser()
         {
@@ -61,14 +125,17 @@ namespace ChatClient.MVVM.ViewModel
 
         }
 
-        private void MessageRecieved()
+        private void MessageReceived()
         {
             var msg = _server.PacketReader.ReadMessage();
-            Application.Current.Dispatcher.Invoke(() => Messages.Add(msg));
+            var messageAndImage = new MessageAndImageModel { Message = msg, Username = _server.PacketReader.ReadMessage() };
+            
+            Application.Current.Dispatcher.Invoke(() => MessagesAndImages.Add(messageAndImage));
+            
         }
 
-        
-        private void ImageRecieved()
+
+        private void ImageReceived()
         {
             var img = _server.PacketReader.ReadImage();
             BitmapImage bitmapImage = new BitmapImage();
@@ -79,8 +146,14 @@ namespace ChatClient.MVVM.ViewModel
                 bitmapImage.StreamSource = ms;
                 bitmapImage.EndInit();
             }
-            Application.Current.Dispatcher.Invoke(() => Images.Add(bitmapImage));
-
+            bitmapImage.Freeze();
+            var messageAndImage = new MessageAndImageModel { Image = bitmapImage, Username =_server.PacketReader.ReadMessage(), Message = $"[{DateTime.Now}]:"};
+            if (Message != null)
+            {
+                messageAndImage.Message += Message;
+            }
+            
+            Application.Current.Dispatcher.Invoke(() => MessagesAndImages.Add(messageAndImage));
         }
 
         private void UserConnected()
@@ -91,7 +164,7 @@ namespace ChatClient.MVVM.ViewModel
                 UID = _server.PacketReader.ReadMessage(),
             };
 
-            if (!Users.Any(x => x.UID == user.UID))
+            if (Users.Any(x => x.UID != user.UID))
             {
                 Application.Current.Dispatcher.Invoke(() => Users.Add(user));
             }

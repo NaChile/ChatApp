@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="EntityFramework" Version="6.4.4" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Images\SendIcon.png" />
     <Resource Include="Images\UploadIcon.png" />
   </ItemGroup>

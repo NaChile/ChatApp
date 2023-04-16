@@ -17,13 +17,16 @@ namespace ChatClient.Net
         public PacketReader PacketReader;
 
         public event Action connectedEvent;
-        public event Action msgRecievedEvent;
-        public event Action imgRecievedEvent;
+        public event Action msgReceivedEvent;
+        public event Action imgReceivedEvent;
         public event Action userDisconnectEvent;
+        public event Action DbReceivedEvent;
+        public event Action DbRegEvent;
 
         public Server()
         {
             _client = new TcpClient();
+            
         }
 
         public void ConnectToServer(string username)
@@ -57,14 +60,21 @@ namespace ChatClient.Net
                             connectedEvent?.Invoke();
                             break;
                         case 5:
-                            msgRecievedEvent?.Invoke();
+                            msgReceivedEvent?.Invoke();
                             break;
                         case 10:
                             userDisconnectEvent?.Invoke();
                             break;
                         case 15:
-                            imgRecievedEvent?.Invoke();
+                            imgReceivedEvent?.Invoke();
                             break;
+                        case 25:
+                            DbReceivedEvent?.Invoke();
+                            break;
+                        case 30:
+                            DbRegEvent?.Invoke();
+                            break;
+                        
                         default:
                             Console.WriteLine("......");
                             break;
@@ -72,6 +82,7 @@ namespace ChatClient.Net
                 }
             });
         }
+
 
         public void SendMessageToServer(string message)
         {
@@ -91,16 +102,30 @@ namespace ChatClient.Net
             if (openFileDialog.ShowDialog() == true)
             {
                 var imageBytes = File.ReadAllBytes(openFileDialog.FileName);
-                var message = "Прикрепленный файл: " + openFileDialog.SafeFileName;
 
-                // Отправка сообщения и изображения на сервер
                 var imagePacket = new PacketBuilder();
                 imagePacket.WriteOpCode(15);
-                SendMessageToServer(message);
                 imagePacket.WriteImage(imageBytes);
                 _client.Client.Send(imagePacket.GetPacketBytes());
 
             }
+        }
+
+        public void CheckCredentials(string username, string password)
+        {
+            var messagePacket = new PacketBuilder();
+            messagePacket.WriteOpCode(25);
+            messagePacket.WriteMessage(username);
+            messagePacket.WriteMessage(password);
+            _client.Client.Send(messagePacket.GetPacketBytes());
+        }
+        public void RegisterCredentials(string username, string password)
+        {
+            var messagePacket = new PacketBuilder();
+            messagePacket.WriteOpCode(30);
+            messagePacket.WriteMessage(username);
+            messagePacket.WriteMessage(password);
+            _client.Client.Send(messagePacket.GetPacketBytes());
         }
 
     }

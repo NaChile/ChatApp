@@ -74,7 +74,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="75"/>
                 <RowDefinition/>
-                <RowDefinition Height="80"/>
+                <RowDefinition Height="55"/>
             </Grid.RowDefinitions>
             
             <StackPanel>
@@ -91,7 +91,7 @@
                 <Label Content="Список пользователей"
                        VerticalAlignment="Center"
                        FontWeight="Medium"
-                       Foreground="White"/>
+                       Foreground="#FFC5C5C5"/>
             </StackPanel>
             <ListView Grid.Row="1"
                       ItemsSource="{Binding Users}"
@@ -104,8 +104,13 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
+            <StackPanel Grid.Row="2"
+                        Orientation="Horizontal"
+                        Background="#292B2F">
+                <TextBlock Text="{Binding Username}" FontWeight="Bold" Foreground="#FFC5C5C5"/>
+                
+            </StackPanel>
             
-            <Image Source="{Binding SelectedImage, UpdateSourceTrigger=PropertyChanged}" x:Name="TestImage"/>
                 
         </Grid>
         <Grid Grid.Column="1" Grid.Row="1">
@@ -114,25 +119,23 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="55"/>
                 </Grid.RowDefinitions>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <ListView Background="Transparent"
+                <ListView Background="Transparent"
                           Height="auto"
                           Foreground="DarkGray"
                           BorderThickness="0"
-                          ItemsSource="{Binding Messages}"/>
-                    <ListView Background="Transparent"
-                              Height="auto"
-                              Foreground="DarkGray"
-                              BorderThickness="0"
-                              ItemsSource="{Binding Images}"
-                              Grid.Column="1"/>
+                          ItemsSource="{Binding MessagesAndImages}">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Vertical" Margin="10">
+                                    <TextBlock Text="{Binding Username,
+                                        StringFormat='{}:'}" FontSize="15"/>
+                                    <TextBlock Text="{Binding Message}" />
+                                    <Image Source="{Binding Image}"  MaxHeight="500" MaxWidth="500"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                </ListView>
 
-
-                </Grid>
                 <Grid Grid.Row="1" Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

@@ -7,9 +7,10 @@ using System.Windows.Media.Imaging;
 
 namespace ChatClient.MVVM.Model
 {
-    class MessagesModel
+    public class MessageAndImageModel
     {
-        public string Messages { get; set; }
-        public BitmapImage Images { get; set; }
+        public string Username { get; set; }
+        public string Message { get; set; }
+        public BitmapImage Image { get; set; }
     }
 }
